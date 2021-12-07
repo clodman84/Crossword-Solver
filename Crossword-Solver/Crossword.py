@@ -174,7 +174,7 @@ class Crossword:
             row, column = node.position
             char = self.board[row][column]
             if char.isalpha():
-                word_list = [word for word in node.word_list if word[0] == char]
+                word_list = dictionary[char][str(node.length)]
             else:
                 word_list = node.word_list
         else:
