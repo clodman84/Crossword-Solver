@@ -1,5 +1,5 @@
 ## Crossword-Solver
-Crossword Solver which uses backtracking, more info when I finish my blogpost about this. Probably next year.
+Crossword Solver which uses backtracking.
 
 ![image](https://github.com/clodman84/Crossword-Solver/blob/master/Crossword-Solver/demos/Test.png?raw=true)
 ![image](https://github.com/clodman84/Crossword-Solver/blob/master/Crossword-Solver/demos/Test1.png?raw=true)
