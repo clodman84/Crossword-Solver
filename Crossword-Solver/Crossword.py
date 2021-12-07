@@ -169,7 +169,18 @@ class Crossword:
         if not node:
             return True
 
-        for word in node.word_list:
+        # making the word list shorter and more specific if the node is not a fixed node
+        if node.is_var:
+            row, column = node.position
+            char = self.board[row][column]
+            if char.isalpha():
+                word_list = [word for word in node.word_list if word[0] == char]
+            else:
+                word_list = node.word_list
+        else:
+            word_list = node.word_list
+
+        for word in word_list:
             if self.check_word(node, word):
                 self.write(node, word)
                 if self.solve():
