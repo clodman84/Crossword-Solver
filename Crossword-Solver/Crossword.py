@@ -95,7 +95,7 @@ class Crossword:
             while True:
                 if row == len(self.board) - 1:
                     return length
-                if self.board[row+1][column] != ' ':
+                if self.board[row + 1][column] != ' ':
                     length += 1
                     row += 1
                 else:
@@ -104,7 +104,7 @@ class Crossword:
             while True:
                 if column == len(self.board[0]) - 1:
                     return length
-                if self.board[row][column+1] != ' ':
+                if self.board[row][column + 1] != ' ':
                     length += 1
                     column += 1
                 else:
@@ -134,11 +134,11 @@ class Crossword:
         for node in self.nodes:
             row, column = node.position
             if node.orientation == 'v':
-                if self.board[row+1][column] == '_':
+                if self.board[row + 1][column] == '_':
                     return node
 
             if node.orientation == 'h':
-                if self.board[row][column+1] == '_':
+                if self.board[row][column + 1] == '_':
                     return node
         return None
 
@@ -189,13 +189,15 @@ class Node:
         self.orientation = orientation
         self.length = length
         self.word_list = []
+        self.is_var = False
 
     def get_word_list(self, char):
         if char.isalpha():
-            self.word_list=dictionary[char][str(self.length)]
+            self.word_list = dictionary[char][str(self.length)]
         else:
             for alpha in dictionary:
                 self.word_list.extend(dictionary[alpha][str(self.length)])
+            self.is_var = True
 
     def __str__(self):
         return f"Orientation:{self.orientation}\nPosition:{self.position}" \
@@ -207,5 +209,5 @@ if __name__ == '__main__':
     cross.display_board()
     a = time.perf_counter()
     cross.solve()
-    print('\nIt took ', time.perf_counter()-a, ' seconds to solve this!')
+    print('\nIt took ', time.perf_counter()-a, ' seconds to solve this!\n')
     cross.display_board()
