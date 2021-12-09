@@ -1,5 +1,6 @@
 import json
 import time
+from numba import jit
 
 puzzle = [
     ['a', ' ', ' ', ' ', ' ', ' ', 'p', ' ', ' '],
@@ -193,6 +194,7 @@ class Crossword:
         for node in self.nodes:
             print(node, end='\n\n')
 
+    func = jit(solve)
 
 class Node:
     def __init__(self, position, orientation, length):
@@ -218,7 +220,8 @@ class Node:
 if __name__ == '__main__':
     cross = Crossword(puzzle)
     cross.display_board()
+    cross.func()
     a = time.perf_counter()
-    cross.solve()
+    cross.func()
     print('\nIt took ', time.perf_counter()-a, ' seconds to solve this!\n')
     cross.display_board()
