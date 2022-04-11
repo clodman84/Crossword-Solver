@@ -12,6 +12,7 @@ def make_dictionary():
                     dictionary[word[0]] = [word]
                 else:
                     dictionary[word[0]].append(word)
+
     # this part will make the values of each letter a dictionary with the key as the length of the word and the values
     # as words of that length. dictionary['a'][6] will return list of words with starting letter a and length 6.
     for alpha in dictionary:

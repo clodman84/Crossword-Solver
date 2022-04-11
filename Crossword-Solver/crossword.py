@@ -1,6 +1,8 @@
 import json
-import time
 from numba import jit
+from itertools import chain
+import time
+
 
 puzzle = [
     ['a', ' ', ' ', ' ', ' ', ' ', 'p', ' ', ' '],
@@ -30,34 +32,33 @@ class Crossword:
 
                 # if it is a vertical node
                 if self.vertical_node(row_index, column_index):
-                    char = self.board[row_index][column_index]
                     pos = (row_index, column_index)
-                    length = self.get_length(pos, 'v')
+                    dim = self.getNodeDimensions(pos, 'v')
                     node = Node(
                         pos,
-                        'v',
-                        length
+                        orientation='v',
+                        length=dim[0],
+                        fixed_char=dim[1]
                     )
-                    node.get_word_list(char)
                     self.nodes.append(node)
+
                 # if it is a horizontal node
                 if self.horizontal_node(row_index, column_index):
-                    char = self.board[row_index][column_index]
                     pos = (row_index, column_index)
-                    length = self.get_length(pos, 'h')
+                    dim = self.getNodeDimensions(pos, 'h')
                     node = Node(
                         pos,
-                        'h',
-                        length
+                        orientation='h',
+                        length=dim[0],
+                        fixed_char=dim[1]
                     )
-                    node.get_word_list(char)
                     self.nodes.append(node)
 
     def vertical_node(self, row, column):
         # checking for cell above and below to decide if this is vertical node
         aboveBlocked = False
         bottomBlocked = False
-        if self.board[row][column] == ' ':
+        if self.board[row][column] == ' ':  # in case the cell cannot store a character, a ' ' cell
             return False
         if row == 0 or self.board[row - 1][column] == ' ':
             aboveBlocked = True
@@ -71,7 +72,6 @@ class Crossword:
         rightBlocked = False
         if self.board[row][column] == ' ':
             return False
-
         if column == 0 or self.board[row][column - 1] == ' ':
             leftBlocked = True
         if column == len(self.board[0]) - 1 or self.board[row][column + 1] == ' ':
@@ -79,39 +79,61 @@ class Crossword:
         return leftBlocked and not rightBlocked
 
     def display_board(self):
-        print(' ', *[i for i in range(len(self.board[0]))])
+        board = '  ' + ' '.join([str(i) for i in range(len(self.board[0]))]) + '\n'
         for i, row in enumerate(self.board):
-            print(i, end=' ')
+            board += f'{i} '
             for char in row:
                 if char == ' ':
-                    print('|', end=' ')
+                    board += '| '
                 else:
-                    print(char, end=' ')
-            print()
+                    board += f"{char} "
+            board += '\n'
+        print(board)
 
-    def get_length(self, pos, orientation):
-        length = 1
+    def getNodeDimensions(self, pos, orientation):
+        """
+        Returns the length and fixed characters of a node given the position and the orientation, does not take node
+        as parameter.
+
+        :param pos: Tuple with (row, column) position, with origin at top left corner
+        :param orientation: Orientation the node, 'v' for vertical 'h' for horizontal
+        :return: (tuple): length (int), fixed_chars (tuple)
+        """
+        length = 0
         row, column = pos
+        fixed_char = []
         if orientation == 'v':
             while True:
                 if row == len(self.board) - 1:
-                    return length
-                if self.board[row + 1][column] != ' ':
+                    return length, fixed_char
+                char = self.board[row + length][column]
+                if char != ' ':  # if the character in that position is not a blocked out cell
+                    if char.isalpha():
+                        fixed_char.append(row+length)
                     length += 1
-                    row += 1
                 else:
-                    return length
+                    return length, tuple(fixed_char)
+
         elif orientation == 'h':
             while True:
                 if column == len(self.board[0]) - 1:
-                    return length
-                if self.board[row][column + 1] != ' ':
+                    return length, fixed_char
+                char = self.board[row][column + length]
+                if char != ' ':
+                    if char.isalpha():
+                        fixed_char.append(column+length)
                     length += 1
-                    column += 1
                 else:
-                    return length
+                    return length, tuple(fixed_char)
 
     def check_word(self, node, word):
+        """
+        Checks if a word fits in a node or not.
+
+        :param node: Node
+        :param word: The word
+        :return: Boolean: True if it fits in the node.
+        """
         row, column = node.position
         if node.orientation == 'v':
             for i in word:
@@ -133,14 +155,8 @@ class Crossword:
 
     def get_empty_node(self):
         for node in self.nodes:
-            row, column = node.position
-            if node.orientation == 'v':
-                if self.board[row + 1][column] == '_':
-                    return node
-
-            if node.orientation == 'h':
-                if self.board[row][column + 1] == '_':
-                    return node
+            if node.is_empty:
+                return node
         return None
 
     def write(self, node, word):
@@ -153,41 +169,42 @@ class Crossword:
             for i in word:
                 self.board[row][column] = i
                 column += 1
+        node.is_empty = False
 
     def erase(self, node):
         row, column = node.position
+
         if node.orientation == 'v':
-            for i in range(node.length):
-                self.board[row][column] = '_'
+            for i in range(len(node)):
+                if row not in node.fixed_char:
+                    self.board[row][column] = '_'
                 row += 1
+
         if node.orientation == 'h':
-            for i in range(node.length):
-                self.board[row][column] = '_'
+            for i in range(len(node)):
+                if column not in node.fixed_char:
+                    self.board[row][column] = '_'
                 column += 1
+        node.is_empty = True
 
     def solve(self):
-        node = self.get_empty_node()
+        node: Node = self.get_empty_node()
         if not node:
             return True
+        # print(node, end='\n')
 
-        # making the word list shorter and more specific if the node is not a fixed node
-        if node.is_var:
-            row, column = node.position
-            char = self.board[row][column]
-            if char.isalpha():
-                word_list = dictionary[char][str(node.length)]
-            else:
-                word_list = node.word_list
-        else:
-            word_list = node.word_list
+        row, column = node.position
+        char = self.board[row][column]
+        word_list = node.get_word_list(char)
 
         for word in word_list:
+            # print(word, end='\r')
             if self.check_word(node, word):
                 self.write(node, word)
+                # self.display_board()
                 if self.solve():
                     return True
                 self.erase(node)
-
         return False
 
     def show_nodes(self):
@@ -196,32 +213,36 @@ class Crossword:
 
     func = jit(solve)
 
+
 class Node:
-    def __init__(self, position, orientation, length):
+    def __init__(self, position, orientation, length, fixed_char):
         self.position = position
         self.orientation = orientation
         self.length = length
-        self.word_list = []
-        self.is_var = False
+        self.is_empty = True
+
+        # a list of column or row indexes (depending on orientation) which should not be erased.
+        self.fixed_char = fixed_char
 
     def get_word_list(self, char):
         if char.isalpha():
-            self.word_list = dictionary[char][str(self.length)]
+            return dictionary[char][str(len(self))]
         else:
-            for alpha in dictionary:
-                self.word_list.extend(dictionary[alpha][str(self.length)])
-            self.is_var = True
+            return list(chain.from_iterable([dictionary[alpha][str(len(self))] for alpha in dictionary.keys()]))
 
     def __str__(self):
-        return f"Orientation:{self.orientation}\nPosition:{self.position}" \
-               f"\nWorldList:{self.word_list}"
+        return f"Orientation:{self.orientation} Position:{self.position} Length: {len(self)} Fixed: {self.fixed_char}"
+
+    def __len__(self):
+        return self.length
 
 
 if __name__ == '__main__':
     cross = Crossword(puzzle)
     cross.display_board()
-    cross.func()
+    for node in cross.nodes:
+        print(node)
     a = time.perf_counter()
-    cross.func()
-    print('\nIt took ', time.perf_counter()-a, ' seconds to solve this!\n')
+    cross.solve()
+    print('\nIt took ', time.perf_counter() - a, ' seconds to solve this!\n')
     cross.display_board()
