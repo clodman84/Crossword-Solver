@@ -106,25 +106,35 @@ class Crossword:
             while True:
                 if row == len(self.board) - 1:
                     return length, fixed_char
-                char = self.board[row + length][column]
+                try:
+                    char = self.board[row + length][column]
+                except IndexError:
+                    break
+
                 if char != ' ':  # if the character in that position is not a blocked out cell
                     if char.isalpha():
                         fixed_char.append(row+length)
                     length += 1
                 else:
-                    return length, tuple(fixed_char)
+                    break
 
         elif orientation == 'h':
             while True:
                 if column == len(self.board[0]) - 1:
                     return length, fixed_char
-                char = self.board[row][column + length]
+                try:
+                    char = self.board[row][column + length]
+                except IndexError:
+                    break
+
                 if char != ' ':
                     if char.isalpha():
                         fixed_char.append(column+length)
                     length += 1
                 else:
-                    return length, tuple(fixed_char)
+                    break
+
+        return length, tuple(fixed_char)
 
     def check_word(self, node, word):
         """
@@ -240,8 +250,8 @@ class Node:
 if __name__ == '__main__':
     cross = Crossword(puzzle)
     cross.display_board()
-    for node in cross.nodes:
-        print(node)
+    for n in cross.nodes:
+        print(n)
     a = time.perf_counter()
     cross.solve()
     print('\nIt took ', time.perf_counter() - a, ' seconds to solve this!\n')
