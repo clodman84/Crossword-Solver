@@ -1,26 +1,20 @@
 import json
-from numba import jit
 from itertools import chain
-import time
-
-
-puzzle = [
-    ['a', ' ', ' ', ' ', ' ', ' ', 'p', ' ', ' '],
-    ['_', ' ', ' ', ' ', ' ', ' ', '_', ' ', ' '],
-    ['_', ' ', ' ', ' ', ' ', ' ', '_', ' ', ' '],
-    ['_', '_', 'n', '_', '_', '_', '_', '_', '_'],
-    ['_', ' ', '_', ' ', ' ', ' ', '_', ' ', ' '],
-    ['_', ' ', '_', ' ', 't', ' ', '_', ' ', ' '],
-    ['_', ' ', '_', '_', '_', '_', '_', '_', ' '],
-    [' ', ' ', '_', ' ', '_', ' ', ' ', ' ', ' '],
-    [' ', ' ', '_', ' ', '_', ' ', ' ', ' ', ' '],
-]
 
 with open('dictionary.json') as file:
     dictionary = json.load(file)
 
+"""
+    This holds the basic Crossword and Node classes that the algorithms will use.
+"""
+
 
 class Crossword:
+    """
+    Takes in a 2D list of letters, then automatically detects the across and down "nodes".
+    Also has methods for erasing and writing from each one of these nodes, checking if a word fits, etc.
+    """
+
     def __init__(self, board):
         self.board = board
         self.nodes = []
@@ -197,31 +191,9 @@ class Crossword:
                 column += 1
         node.is_empty = True
 
-    def solve(self):
-        node: Node = self.get_empty_node()
-        if not node:
-            return True
-        # print(node, end='\n')
-
-        row, column = node.position
-        char = self.board[row][column]
-        word_list = node.get_word_list(char)
-
-        for word in word_list:
-            # print(word, end='\r')
-            if self.check_word(node, word):
-                self.write(node, word)
-                # self.display_board()
-                if self.solve():
-                    return True
-                self.erase(node)
-        return False
-
     def show_nodes(self):
         for node in self.nodes:
             print(node, end='\n\n')
-
-    func = jit(solve)
 
 
 class Node:
@@ -245,14 +217,3 @@ class Node:
 
     def __len__(self):
         return self.length
-
-
-if __name__ == '__main__':
-    cross = Crossword(puzzle)
-    cross.display_board()
-    for n in cross.nodes:
-        print(n)
-    a = time.perf_counter()
-    cross.solve()
-    print('\nIt took ', time.perf_counter() - a, ' seconds to solve this!\n')
-    cross.display_board()
